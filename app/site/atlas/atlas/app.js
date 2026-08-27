@@ -18,7 +18,7 @@ boot();
 
 async function boot() {
   try {
-    setStatus('Preparando cristales...', 'offline');
+    setStatus('Preparing crystals...', 'offline');
     state.dataset = await loadDataset();
     state.atlas = new OlfariaAtlas($('#atlas-canvas'), $('#tooltip'));
     state.atlas.externalRenderer = true;
@@ -28,24 +28,24 @@ async function boot() {
     exposeExternalApi();
     rebuild();
     renderCorpusContract();
-    setStatus('Crystal Neural Erdos listo para explorar.', 'online');
-    $('#dataset-status').textContent = `${state.dataset.nodes.length.toLocaleString('es-ES')} olfemas · ${state.dataset.relations.length.toLocaleString('es-ES')} relaciones`;
+    setStatus('Crystal Neural Erdos ready to explore.', 'online');
+    $('#dataset-status').textContent = `${state.dataset.nodes.length.toLocaleString('en-US')} olfemes · ${state.dataset.relations.length.toLocaleString('en-US')} relationships`;
     window.dispatchEvent(new CustomEvent('olfaria:ready', {
       detail: { olfemas: state.dataset.nodes.length, relaciones: state.dataset.relations.length },
     }));
   } catch (error) {
-    setStatus(`No se pudo cargar el atlas: ${error.message}`, 'offline');
+    setStatus(`The Atlas could not be loaded: ${error.message}`, 'offline');
   }
 }
 
 function renderCorpusContract() {
   const audit = state.dataset.meta.corpusAudit;
   if (!audit) return;
-  const active = audit.published_counts.relations_active.toLocaleString('es-ES');
-  const requested = audit.requested_counts.relations.toLocaleString('es-ES');
-  $('#top-catalog').textContent = `${active} relaciones cargadas`;
-  $('#corpus-contract').textContent = `v4 · ${audit.published_counts.olfemas.toLocaleString('es-ES')} olfemas · ${active} relaciones activas`;
-  $('#corpus-gap').textContent = `La fuente contiene ${audit.discrepancy.missing_relation_records} relaciones menos que las ${requested} solicitadas; no se sintetizan.`;
+  const active = audit.published_counts.relations_active.toLocaleString('en-US');
+  const requested = audit.requested_counts.relations.toLocaleString('en-US');
+  $('#top-catalog').textContent = `${active} relationships loaded`;
+  $('#corpus-contract').textContent = `v4 · ${audit.published_counts.olfemas.toLocaleString('en-US')} olfemes · ${active} active relationships`;
+  $('#corpus-gap').textContent = `The source contains ${audit.discrepancy.missing_relation_records} fewer relationships than the requested ${requested}; none are synthesized.`;
   $('#corpus-hash').textContent = `SHA-256 ${audit.source_sha256.slice(0, 16)}…`;
 }
 
@@ -74,8 +74,8 @@ function setCorpusView(fullCorpus) {
   state.fullCorpus = Boolean(fullCorpus);
   rebuild();
   setStatus(state.fullCorpus
-    ? 'Corpus completo: 5.000 olfemas y relaciones auditadas en campo.'
-    : 'Vista fluida restaurada.', 'online');
+    ? 'Full corpus: 5,000 olfemes and audited relationships in the field.'
+    : 'Fluid view restored.', 'online');
 }
 
 function paramsFromUi() {
@@ -118,8 +118,8 @@ function selectNodeById(id) {
 }
 
 function renderMetrics(summary) {
-  $('#metric-nodes').textContent = summary.nodes.toLocaleString('es-ES');
-  $('#metric-edges').textContent = summary.edges.toLocaleString('es-ES');
+  $('#metric-nodes').textContent = summary.nodes.toLocaleString('en-US');
+  $('#metric-edges').textContent = summary.edges.toLocaleString('en-US');
   $('#metric-degree').textContent = summary.averageDegree.toFixed(2);
   $('#metric-active').textContent = summary.active;
 }
@@ -138,7 +138,7 @@ function setSessionText(text, source = 'api', extractedActive = null) {
     state.atlas.clearSessionFormation();
     stopProcessTicker();
   }
-  setStatus(state.sessionText ? `Sesion activada desde ${source}.` : 'Sesion limpia.', 'online');
+  setStatus(state.sessionText ? `Session activated by ${source}.` : 'Session cleared.', 'online');
 }
 
 function deriveAutoParams() {
@@ -184,19 +184,19 @@ function renderLegend(summary) {
     .filter(Boolean);
   const families = countBy(activeNodes, (node) => node.family).slice(0, 3).map(([family]) => family).join(', ') || '--';
   $('#mode-caption').textContent = 'crystal JSON';
-  $('#top-mode').textContent = state.fullCorpus && !state.activeIds.size ? 'campo completo' : modeLabel(params.mode);
+  $('#top-mode').textContent = state.fullCorpus && !state.activeIds.size ? 'full field' : modeLabel(params.mode);
   $('#top-scope').textContent = state.activeIds.size
-    ? `${state.activeIds.size.toLocaleString('es-ES')} activos · sin vecinos extra`
-    : `${params.visibleCount.toLocaleString('es-ES')} visibles · ${state.dataset.nodes.length.toLocaleString('es-ES')} cargados`;
+    ? `${state.activeIds.size.toLocaleString('en-US')} active · no extra neighbors`
+    : `${params.visibleCount.toLocaleString('en-US')} visible · ${state.dataset.nodes.length.toLocaleString('en-US')} loaded`;
   $('#legend-visible').textContent = state.activeIds.size ? `${summary.nodes} / ${state.dataset.nodes.length}` : `${params.visibleCount} / ${state.dataset.nodes.length}`;
   $('#legend-mode').textContent = modeLabel(params.mode);
   $('#legend-depth').textContent = params.maxDepth;
   $('#legend-confidence').textContent = params.minConfidence.toFixed(2);
-  $('#legend-degree').textContent = Number.isFinite(params.maxDegree) ? params.maxDegree : 'sin limite';
+  $('#legend-degree').textContent = Number.isFinite(params.maxDegree) ? params.maxDegree : 'unlimited';
   $('#legend-polarity').textContent = polarityLabel(params.polarityFilter);
   $('#legend-families').textContent = families;
-  $('#legend-relations').textContent = state.activeIds.size ? `${summary.edges} uniones de sesion` : `${summary.edges} aristas`;
-  $('#mode-caption').textContent = state.activeIds.size ? 'activacion' : 'crystal JSON';
+  $('#legend-relations').textContent = state.activeIds.size ? `${summary.edges} session relationships` : `${summary.edges} edges`;
+  $('#mode-caption').textContent = state.activeIds.size ? 'activation' : 'crystal JSON';
   const fluidButton = $('#corpus-fluid');
   const fullButton = $('#corpus-full');
   fluidButton?.classList.toggle('active', !state.fullCorpus);
@@ -206,10 +206,10 @@ function renderLegend(summary) {
   const viewNote = $('#corpus-view-note');
   if (viewNote) {
     viewNote.textContent = state.activeIds.size
-      ? `${summary.nodes.toLocaleString('es-ES')} olfemas activos en la sesion.`
+      ? `${summary.nodes.toLocaleString('en-US')} active olfemes in the session.`
       : state.fullCorpus
-        ? `${summary.nodes.toLocaleString('es-ES')} olfemas y ${summary.edges.toLocaleString('es-ES')} relaciones visibles.`
-        : `${summary.nodes.toLocaleString('es-ES')} olfemas visibles para mantener fluidez.`;
+        ? `${summary.nodes.toLocaleString('en-US')} olfemes and ${summary.edges.toLocaleString('en-US')} visible relationships.`
+        : `${summary.nodes.toLocaleString('en-US')} visible olfemes for smooth rendering.`;
   }
 }
 
@@ -279,7 +279,7 @@ function renderSessionSummary() {
   const box = $('#session-summary');
   if (!state.sessionText) {
     box.classList.add('empty');
-    box.textContent = 'Sin sesion activa.';
+    box.textContent = 'No active session.';
     renderActivationFeed([], []);
     renderProcessComments();
     return;
@@ -292,15 +292,15 @@ function renderSessionSummary() {
   const families = countBy(activeNodes, (item) => item.node.family).slice(0, 6).map(([key, value]) => `${key} ${value}`).join(' · ');
   const phases = countBy(activeNodes, (item) => item.node.phase).slice(0, 5).map(([key, value]) => `${key} ${value}`).join(' · ');
   const sessionEdges = state.atlas?.edges || [];
-  const comments = sessionEdges.slice(0, 3).map((edge) => edge.rationale).filter(Boolean);
+  const relationshipSummaries = sessionEdges.slice(0, 3).map(formatRelationshipSummary);
   box.innerHTML = `
-    <strong>${activeNodes.length} olfemas activados</strong><br>
-    ${sessionEdges.length} uniones internas · ${state.dataset.nodes.length - activeNodes.length} olfemas no activos ocultos<br>
-    Familias dominantes: ${escapeHtml(families || 'sin coincidencias directas')}<br>
-    Fases: ${escapeHtml(phases || 'sin fase dominante')}<br>
-    ${comments.map((comment) => `Relacion: ${escapeHtml(comment)}`).join('<br>')}
-    ${comments.length ? '<br>' : ''}
-    Muestra principal: ${previewNodes.map((item) => escapeHtml(item.node.label)).join(', ') || 'sin olfemas detectados'}
+    <strong>${activeNodes.length} active olfemes</strong><br>
+    ${sessionEdges.length} internal relationships · ${state.dataset.nodes.length - activeNodes.length} inactive olfemes hidden<br>
+    Dominant families: ${escapeHtml(families || 'no direct matches')}<br>
+    Phases: ${escapeHtml(phases || 'no dominant phase')}<br>
+    ${relationshipSummaries.map((summary) => `Relationship: ${escapeHtml(summary)}`).join('<br>')}
+    ${relationshipSummaries.length ? '<br>' : ''}
+    Primary sample: ${previewNodes.map((item) => escapeHtml(nodeDisplayId(item.node))).join(', ') || 'no olfemes detected'}
   `;
   renderActivationFeed(activeNodes, sessionEdges);
   renderProcessComments();
@@ -313,9 +313,9 @@ function renderActivationFeed(activeNodes, sessionEdges) {
     feed.className = 'activation-feed idle';
     feed.innerHTML = `
       <article>
-        <span>Campo en reposo</span>
-        <strong>Morulas en standby</strong>
-        <small>Activa una descripcion para observar la cristalizacion.</small>
+        <span>Field at rest</span>
+        <strong>Morulas on standby</strong>
+        <small>Activate a description to observe crystallization.</small>
       </article>
     `;
     return;
@@ -324,16 +324,16 @@ function renderActivationFeed(activeNodes, sessionEdges) {
     feed.className = 'activation-feed idle';
     feed.innerHTML = `
       <article>
-        <span>Lectura sin coincidencias</span>
-        <strong>El campo sigue en reposo</strong>
-        <small>Prueba con descriptores mas concretos del corpus.</small>
+        <span>No matches found</span>
+        <strong>The field remains at rest</strong>
+        <small>Try more specific corpus descriptors.</small>
       </article>
     `;
     return;
   }
 
   const polarity = activeNodes.reduce((sum, item) => sum + (Number(item.node.hedonicPolarity) || 0), 0) / activeNodes.length;
-  const polarityLabel = polarity > 0.22 ? 'Luminosa y positiva' : polarity < -0.22 ? 'Oscura y contrastada' : 'Equilibrada y ambivalente';
+  const polarityLabel = polarity > 0.22 ? 'Bright and positive' : polarity < -0.22 ? 'Dark and contrasting' : 'Balanced and ambivalent';
   const phaseCounts = countBy(activeNodes, (item) => item.node.phase).slice(0, 3);
   const phases = phaseCounts.map(([phase, count]) => `${phase} ${count}`).join(' · ');
   const relationClasses = countBy(sessionEdges, (edge) => edge.relationClass || 'neutral').slice(0, 2);
@@ -345,19 +345,19 @@ function renderActivationFeed(activeNodes, sessionEdges) {
   feed.className = 'activation-feed active';
   feed.innerHTML = `
     <article>
-      <span>Polaridad general</span>
+      <span>Overall polarity</span>
       <strong>${escapeHtml(polarityLabel)}</strong>
-      <small>Indice medio ${polarity.toFixed(2)} en ${activeNodes.length} olfemas activos.</small>
+      <small>Mean index ${polarity.toFixed(2)} across ${activeNodes.length} active olfemes.</small>
     </article>
     <article>
-      <span>Fases del grafo</span>
-      <strong>${escapeHtml(phases || 'Sin fase dominante')}</strong>
-      <small>Las fases ordenan la evolucion temporal del acorde.</small>
+      <span>Graph phases</span>
+      <strong>${escapeHtml(phases || 'No dominant phase')}</strong>
+      <small>Phases describe the temporal evolution of the accord.</small>
     </article>
     <article>
-      <span>Resonancia</span>
-      <strong>${sessionEdges.length} conexiones</strong>
-      <small>${escapeHtml(relationTheme || 'sin enlace directo')} · confianza ${averageQuality.toFixed(2)}</small>
+      <span>Resonance</span>
+      <strong>${sessionEdges.length} connections</strong>
+      <small>${escapeHtml(relationTheme || 'no direct relationship')} · confidence ${averageQuality.toFixed(2)}</small>
     </article>
   `;
 }
@@ -367,7 +367,7 @@ function renderProcessComments() {
   if (!box) return;
   if (!state.sessionText || !state.activeIds.size) {
     box.classList.add('empty');
-    box.innerHTML = '<strong>Proceso</strong><span>Activa una sesion para ver como se combinan los copos activos.</span>';
+    box.innerHTML = '<strong>Process</strong><span>Activate a session to see how the active flakes combine.</span>';
     return;
   }
   box.classList.remove('empty');
@@ -376,17 +376,33 @@ function renderProcessComments() {
   const activeIndex = Math.max(0, Math.min(edges.length - 1, Math.floor(progress * Math.max(1, edges.length))));
   const visible = edges.slice(0, 6);
   box.innerHTML = `
-    <strong>Proceso de combinacion</strong>
-    <span>${state.activeIds.size} activos · ${edges.length} uniones entre olfemas activados</span>
+    <strong>Combination process</strong>
+    <span>${state.activeIds.size} active · ${edges.length} relationships between active olfemes</span>
     <div class="process-steps">
       ${visible.map((edge, index) => `
         <div class="process-step ${index <= activeIndex ? 'lit' : ''}">
-          <b>${escapeHtml(edge.sourceLabel || edge.source)} + ${escapeHtml(edge.targetLabel || edge.target)}</b>
-          <small>${escapeHtml(edge.rationale || edge.predicate)}</small>
+          <b>${escapeHtml(edge.source)} + ${escapeHtml(edge.target)}</b>
+          <small>${escapeHtml(formatRelationshipDetails(edge))}</small>
         </div>
-      `).join('') || '<div class="process-step lit"><b>Sin union directa</b><small>Los activos quedan aislados porque no hay relacion de sesion suficiente.</small></div>'}
+      `).join('') || '<div class="process-step lit"><b>No direct relationship</b><small>The active olfemes remain isolated because the session contains no supported relationship.</small></div>'}
     </div>
   `;
+}
+
+function nodeDisplayId(node) {
+  return node?.idKey || node?.id || node?.code || 'unknown';
+}
+
+function formatRelationshipSummary(edge) {
+  return `${edge.source} → ${edge.target} · ${edge.predicate || 'related'}`;
+}
+
+function formatRelationshipDetails(edge) {
+  const predicate = edge.predicate || 'related';
+  const confidence = Number(edge.confidence ?? edge.quality);
+  return Number.isFinite(confidence)
+    ? `${predicate} · confidence ${confidence.toFixed(2)}`
+    : predicate;
 }
 
 function startProcessTicker() {
@@ -1123,23 +1139,23 @@ function pathSection(title, items) {
 
 function modeLabel(mode) {
   const labels = {
-    raw: 'relaciones JSON',
-    distance: 'distancia olfematica',
-    resonance: 'resonancia',
-    creative: 'diferencia creativa',
-    risk: 'riesgo/negativo',
+    raw: 'JSON relationships',
+    distance: 'olfematic distance',
+    resonance: 'resonance',
+    creative: 'creative difference',
+    risk: 'risk/negative',
   };
   return labels[mode] || mode;
 }
 
 function polarityLabel(value) {
   const labels = {
-    all: 'todas',
-    positive: 'positivas',
-    neutral: 'neutrales',
-    creative: 'creativas',
-    negative: 'negativas',
-    risk: 'riesgo',
+    all: 'all',
+    positive: 'positive',
+    neutral: 'neutral',
+    creative: 'creative',
+    negative: 'negative',
+    risk: 'risk',
   };
   return labels[value] || value;
 }
@@ -1156,3 +1172,4 @@ function escapeHtml(value) {
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#39;');
 }
+
