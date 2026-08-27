@@ -1,0 +1,33 @@
+{
+  "schema": "olfaria.blender-assets.v1",
+  "generator": "Blender 5.1.1",
+  "source": "blender/olfaria_crystal_master.blend",
+  "mesh": {
+    "url": "/assets/blender/olfaria_snowflake_mesh.json",
+    "sha256": "26d067437b6beab4f3b9b9425e5730c1db26839466b081f5e0f737084333c583",
+    "vertices": 9764,
+    "triangles": 3752
+  },
+  "lod_mesh": {
+    "url": "/assets/blender/olfaria_snowflake_lod.json",
+    "sha256": "c60c76fe9d63ee6952298ef2b97b7bc0582aa73b0a3b78c7facdf9daeaf8a192",
+    "vertices": 2250,
+    "triangles": 750
+  },
+  "standby_morula": {
+    "url": "/assets/blender/olfaria_morula_lod.json",
+    "sha256": "2e58caa2f1e77c67433d55a8f68330f1ead556c685b099002654e5c523b5c9c0",
+    "vertices": 540,
+    "triangles": 180
+  },
+  "preview": {
+    "url": "/assets/blender/olfaria_blender_network.png",
+    "nodes": 84,
+    "relations": 142
+  },
+  "runtime_contract": {
+    "olfemas": 5000,
+    "relations_audited": 12560,
+    "instancing": true
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "dataset": "Olfaria WebMCP synthetic sample",
+  "version": "1.0.0",
+  "olfemas": [
+    {"codigo":"DEMO001","id_key":"demo.citrus_bright","etiqueta":"cítrico luminoso sintético","familia":"demo-citrus","faceta":"bright","fase":"head","intensidad":[1,3],"polaridad":0.5,"sinonimos":["demo citrus"],"ingredientes_materiales":[],"procedencia":["synthetic public demo"],"incertidumbre":1.0,"codigo_original":"DEMO001"},
+    {"codigo":"DEMO002","id_key":"demo.floral_soft","etiqueta":"floral suave sintético","familia":"demo-floral","faceta":"soft","fase":"heart","intensidad":[1,3],"polaridad":0.4,"sinonimos":["demo floral"],"ingredientes_materiales":[],"procedencia":["synthetic public demo"],"incertidumbre":1.0,"codigo_original":"DEMO002"},
+    {"codigo":"DEMO003","id_key":"demo.woody_dry","etiqueta":"madera seca sintética","familia":"demo-woody","faceta":"dry","fase":"base","intensidad":[2,4],"polaridad":0.1,"sinonimos":["demo wood"],"ingredientes_materiales":[],"procedencia":["synthetic public demo"],"incertidumbre":1.0,"codigo_original":"DEMO003"},
+    {"codigo":"DEMO004","id_key":"demo.marine_clear","etiqueta":"marino claro sintético","familia":"demo-marine","faceta":"clear","fase":"head","intensidad":[1,4],"polaridad":0.3,"sinonimos":["demo marine"],"ingredientes_materiales":[],"procedencia":["synthetic public demo"],"incertidumbre":1.0,"codigo_original":"DEMO004"},
+    {"codigo":"DEMO005","id_key":"demo.amber_warm","etiqueta":"ámbar cálido sintético","familia":"demo-amber","faceta":"warm","fase":"base","intensidad":[2,5],"polaridad":0.45,"sinonimos":["demo amber"],"ingredientes_materiales":[],"procedencia":["synthetic public demo"],"incertidumbre":1.0,"codigo_original":"DEMO005"}
+  ],
+  "relaciones": [
+    {"relacion":"DEMOREL001","origen":"demo.citrus_bright","predicado":"demo_related_to","destino":"demo.floral_soft","confianza":0.5,"incertidumbre":1.0},
+    {"relacion":"DEMOREL002","origen":"demo.floral_soft","predicado":"demo_related_to","destino":"demo.woody_dry","confianza":0.5,"incertidumbre":1.0},
+    {"relacion":"DEMOREL003","origen":"demo.citrus_bright","predicado":"demo_related_to","destino":"demo.marine_clear","confianza":0.5,"incertidumbre":1.0},
+    {"relacion":"DEMOREL004","origen":"demo.woody_dry","predicado":"demo_related_to","destino":"demo.amber_warm","confianza":0.5,"incertidumbre":1.0}
+  ]
+}

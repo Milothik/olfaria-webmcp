@@ -38,4 +38,3 @@ Set `OLFARIA_DATA_FILE` to an external JSON file at runtime. Optionally set
 
 The public sample proves the software contract only. It is not sensory
 validation, regulatory advice, or canonical corpus promotion.
-
