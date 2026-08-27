@@ -78,6 +78,7 @@
     'Vecindario compositivo': 'Compositional neighborhood',
     'Selecciona un olfema para fijar su vecindario.': 'Select an olfeme to pin its neighborhood.',
     'Preparando atlas...': 'Preparing Atlas...',
+    'BLENDER FIELD / preparando materia': 'BLENDER FIELD / preparing matter',
     'Lectura sin coincidencias': 'No matches found',
     'El campo sigue en reposo': 'The field remains at rest',
     'Prueba con descriptores mas concretos del corpus.': 'Try more specific corpus descriptors.',
@@ -96,6 +97,7 @@
   }));
 
   const attributes = new Map(Object.entries({
+    'Emblema de Olfaria': 'Olfaria emblem',
     'Bergamota helada, jazmin cremoso y cedro lapiz...': 'Iced bergamot, creamy jasmine, and pencil cedar...',
     'Limpiar sesion': 'Clear session',
     'Limpiar sesión': 'Clear session',
@@ -103,6 +105,7 @@
     'Lectura olfativa': 'Olfactory reading',
     'Campo esferico de olfemas y relaciones': 'Spherical field of olfemes and relationships',
     'Campo esférico de olfemas y relaciones': 'Spherical field of olfemes and relationships',
+    'Campo 3D de morulas, cristales volumetricos y relaciones olfematicas': '3D field of morulas, volumetric crystals, and olfematic relationships',
     'Densidad del atlas': 'Atlas density',
     'Inspector de olfema': 'Olfeme inspector',
     'Cerrar inspector': 'Close inspector',
@@ -155,13 +158,23 @@
     if (translated !== trimmed) node.nodeValue = raw.replace(trimmed, translated);
   }
 
-  function translateElement(element) {
+  function translateAttributes(element) {
     ['placeholder', 'aria-label', 'title'].forEach((name) => {
       const value = element.getAttribute?.(name);
       if (!value) return;
       const translated = attributes.get(value) || exact.get(value) || translateDynamic(value);
       if (translated !== value) element.setAttribute(name, translated);
     });
+    const alt = element.getAttribute?.('alt');
+    if (alt) {
+      const translated = attributes.get(alt) || exact.get(alt) || translateDynamic(alt);
+      if (translated !== alt) element.setAttribute('alt', translated);
+    }
+  }
+
+  function translateElement(element) {
+    translateAttributes(element);
+    element.querySelectorAll?.('*').forEach(translateAttributes);
     const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT);
     let current;
     while ((current = walker.nextNode())) translateTextNode(current);
@@ -172,14 +185,22 @@
     new MutationObserver((mutations) => {
       mutations.forEach((mutation) => {
         if (mutation.type === 'characterData') translateTextNode(mutation.target);
+        if (mutation.type === 'attributes') translateAttributes(mutation.target);
         mutation.addedNodes.forEach((node) => {
           if (node.nodeType === Node.TEXT_NODE) translateTextNode(node);
           if (node.nodeType === Node.ELEMENT_NODE) translateElement(node);
         });
       });
-    }).observe(document.body, { childList: true, subtree: true, characterData: true });
+    }).observe(document.body, {
+      childList: true,
+      subtree: true,
+      characterData: true,
+      attributes: true,
+      attributeFilter: ['placeholder', 'aria-label', 'title', 'alt'],
+    });
   };
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start);
   else start();
 })();
+
