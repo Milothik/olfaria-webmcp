@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Acceso privado al Crystal Neural Erdos de Olfaria." />
+    <meta name="theme-color" content="#0d0f12" />
+    <link rel="icon" href="./assets/brand/olfaria-o.png" />
+    <link rel="stylesheet" href="./auth.css?v=20260829-subpath-1" />
+    <title>Acceso | Olfaria</title>
+  </head>
+  <body>
+    <main class="login-shell">
+      <section class="login-card" aria-labelledby="login-title">
+        <div class="brand-lockup">
+          <img src="./assets/brand/olfaria-o.png" alt="" width="64" height="64" />
+          <div><strong>OLFARIA</strong><span>Crystal Neural Erdos</span></div>
+        </div>
+        <p class="eyebrow">Acceso privado</p>
+        <h1 id="login-title">Entra en el atlas olfativo.</h1>
+        <p class="intro">Tu sesión se recordará de forma segura en este navegador durante 30 días.</p>
+        <form id="login-form" novalidate>
+          <label for="username">Usuario</label>
+          <input id="username" name="username" type="text" autocomplete="username" maxlength="80" required autofocus />
+          <label for="password">Contraseña</label>
+          <input id="password" name="password" type="password" autocomplete="current-password" maxlength="200" required />
+          <button type="submit">Iniciar sesión</button>
+          <p id="login-status" class="status" role="alert" aria-live="polite"></p>
+        </form>
+        <p class="privacy">La credencial se valida de forma segura en el servidor. La contraseña no se guarda en el navegador.</p>
+      </section>
+    </main>
+    <script src="./login.js?v=20260829-subpath-1" defer></script>
+  </body>
+</html>

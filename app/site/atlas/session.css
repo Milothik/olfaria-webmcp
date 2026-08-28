@@ -1,0 +1,48 @@
+.account-control {
+  position: fixed;
+  z-index: 30;
+  top: 18px;
+  right: 18px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid var(--line, rgba(234, 238, 242, .14));
+  border-radius: var(--radius, 8px);
+  padding: 7px 8px 7px 12px;
+  color: var(--muted, #aeb6c1);
+  background: var(--panel-strong, rgba(18, 21, 25, .94));
+  box-shadow: var(--shadow, 0 22px 80px rgba(0, 0, 0, .42));
+  backdrop-filter: blur(18px);
+  font-size: 12px;
+}
+.atlas-identity .account-control {
+  position: static;
+  justify-content: space-between;
+  margin-top: 4px;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  box-shadow: none;
+  backdrop-filter: none;
+  font-size: 9px;
+}
+.atlas-identity .account-control button {
+  min-height: 22px;
+  padding: 0 7px;
+  font-size: 9px;
+}
+.account-control button {
+  min-height: 30px;
+  padding: 0 9px;
+  border: 1px solid var(--line, rgba(234, 238, 242, .14));
+  border-radius: var(--radius, 8px);
+  color: var(--fg, #f5f7f9);
+  background: rgba(255, 255, 255, .06);
+  font: inherit;
+  font-size: 11px;
+  cursor: pointer;
+}
+@media (max-width: 680px) {
+  .account-control { top: auto; right: 10px; bottom: 10px; }
+  .atlas-identity .account-control { position: static; }
+}

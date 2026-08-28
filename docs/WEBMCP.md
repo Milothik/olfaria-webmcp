@@ -11,6 +11,6 @@
 The page checks for `document.modelContext.registerTool`. When WebMCP is not
 available, registration is skipped and the Atlas remains fully usable.
 
-The public repository demonstrates the software contract with synthetic data.
+The public repository documents the software contract without shipping a local test dataset. Evaluation is performed against the authenticated deployment.
 Private deployments inject their corpus at runtime through
 `OLFARIA_DATA_FILE`; the data file is never required in Git history.

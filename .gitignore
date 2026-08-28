@@ -2,6 +2,7 @@
 __pycache__/
 .pytest_cache/
 .env
+.env.*
 *.pyc
 
 # Never commit the private Olfaria corpus.
@@ -9,3 +10,21 @@ app/data/*.json
 !app/data/olfaria-sample.json
 app/site/atlas/data/olfaria-corpus*.json
 *OlfemasyRelaciones*
+
+# Production authentication and deployment material.
+*credentials*
+*accounts*.json
+*session-secret*
+*.pem
+*.key
+*.p12
+*.pfx
+
+# Local capture, testing and release artifacts are not part of the public repo.
+tests/
+scripts/
+captures/
+qa/
+*.zip
+*.tar
+*.tar.gz

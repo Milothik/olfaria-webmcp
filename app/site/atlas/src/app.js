@@ -1,7 +1,8 @@
-import { OlfariaAtlas } from './atlas.js?v=20260808-blender';
+import { OlfariaAtlas } from './atlas.js?v=20260607-clean';
 import { loadDataset, normalizeText } from './data.js?v=20260606-focus';
 
 const $ = (selector) => document.querySelector(selector);
+const $$ = (selector) => [...document.querySelectorAll(selector)];
 const state = {
   dataset: null,
   atlas: null,
@@ -10,7 +11,6 @@ const state = {
   relatedIds: new Set(),
   autoParams: null,
   graphMode: 'raw',
-  fullCorpus: false,
   processTimer: null,
 };
 
@@ -21,32 +21,16 @@ async function boot() {
     setStatus('Preparing crystals...', 'offline');
     state.dataset = await loadDataset();
     state.atlas = new OlfariaAtlas($('#atlas-canvas'), $('#tooltip'));
-    state.atlas.externalRenderer = true;
     state.atlas.setData(state.dataset.nodes, state.dataset.relations);
     state.atlas.onSelect = renderInspector;
     bindUi();
     exposeExternalApi();
     rebuild();
-    renderCorpusContract();
-    setStatus('Crystal Neural Erdos ready to explore.', 'online');
-    $('#dataset-status').textContent = `${state.dataset.nodes.length.toLocaleString('en-US')} olfemes · ${state.dataset.relations.length.toLocaleString('en-US')} relationships`;
-    window.dispatchEvent(new CustomEvent('olfaria:ready', {
-      detail: { olfemas: state.dataset.nodes.length, relaciones: state.dataset.relations.length },
-    }));
+    setStatus('Crystal Erdos Atlas ready for sessions and external API control.', 'online');
+    $('#dataset-status').textContent = `${state.dataset.nodes.length} cristales · ${state.dataset.relations.length} relaciones`;
   } catch (error) {
-    setStatus(`The Atlas could not be loaded: ${error.message}`, 'offline');
+    setStatus(`No se pudo cargar el atlas: ${error.message}`, 'offline');
   }
-}
-
-function renderCorpusContract() {
-  const audit = state.dataset.meta.corpusAudit;
-  if (!audit) return;
-  const active = audit.published_counts.relations_active.toLocaleString('en-US');
-  const requested = audit.requested_counts.relations.toLocaleString('en-US');
-  $('#top-catalog').textContent = `${active} relationships loaded`;
-  $('#corpus-contract').textContent = `v4 · ${audit.published_counts.olfemas.toLocaleString('en-US')} olfemes · ${active} active relationships`;
-  $('#corpus-gap').textContent = `The source contains ${audit.discrepancy.missing_relation_records} fewer relationships than the requested ${requested}; none are synthesized.`;
-  $('#corpus-hash').textContent = `SHA-256 ${audit.source_sha256.slice(0, 16)}…`;
 }
 
 function bindUi() {
@@ -56,26 +40,14 @@ function bindUi() {
   $('#copy-extract').addEventListener('click', copyExtraction);
   $('#polarity-filter')?.addEventListener('change', rebuild);
   $('#disconnected-mode')?.addEventListener('change', rebuild);
-  $('#corpus-fluid')?.addEventListener('click', () => setCorpusView(false));
-  $('#corpus-full')?.addEventListener('click', () => setCorpusView(true));
-  window.addEventListener('olfaria:select', (event) => selectNodeById(event.detail?.id));
   $('#reset-view').addEventListener('click', () => {
     state.atlas.rotX = -0.23;
     state.atlas.rotY = 0.68;
     state.atlas.zoom = 1;
     state.atlas.requestRender();
-    window.dispatchEvent(new CustomEvent('olfaria:three-command', { detail: { type: 'reset' } }));
   });
   $('#fit-session').addEventListener('click', () => centerSession());
   $('#close-inspector').addEventListener('click', () => $('#inspector').classList.remove('open'));
-}
-
-function setCorpusView(fullCorpus) {
-  state.fullCorpus = Boolean(fullCorpus);
-  rebuild();
-  setStatus(state.fullCorpus
-    ? 'Full corpus: 5,000 olfemes and audited relationships in the field.'
-    : 'Fluid view restored.', 'online');
 }
 
 function paramsFromUi() {
@@ -94,32 +66,11 @@ function rebuild() {
   renderSessionSummary();
   renderLegend(summary);
   renderProcessComments();
-  publishRenderState();
-}
-
-function publishRenderState() {
-  const detail = {
-    nodes: state.atlas.nodes,
-    edges: state.atlas.edges,
-    activeIds: [...state.activeIds.keys()],
-    selectedId: state.atlas.selected?.id || null,
-  };
-  window.__OLFARIA_ATLAS_STATE__ = detail;
-  window.dispatchEvent(new CustomEvent('olfaria:atlas-state', { detail }));
-}
-
-function selectNodeById(id) {
-  if (!id || !state.atlas) return;
-  const node = state.atlas.nodes.find((item) => item.id === id);
-  if (!node) return;
-  state.atlas.selected = node;
-  renderInspector(node, state.atlas.neighbors(node));
-  publishRenderState();
 }
 
 function renderMetrics(summary) {
-  $('#metric-nodes').textContent = summary.nodes.toLocaleString('en-US');
-  $('#metric-edges').textContent = summary.edges.toLocaleString('en-US');
+  $('#metric-nodes').textContent = summary.nodes;
+  $('#metric-edges').textContent = summary.edges;
   $('#metric-degree').textContent = summary.averageDegree.toFixed(2);
   $('#metric-active').textContent = summary.active;
 }
@@ -145,18 +96,18 @@ function deriveAutoParams() {
   const activeNodes = [...state.activeIds.keys()]
     .map((id) => state.dataset.nodes.find((node) => node.id === id))
     .filter(Boolean);
+  const text = normalizeText(state.sessionText);
   const families = new Set(activeNodes.map((node) => node.family));
   const phases = new Set(activeNodes.map((node) => node.phase));
   const avgIntensity = activeNodes.reduce((sum, node) => sum + node.intensity, 0) / Math.max(1, activeNodes.length);
   const avgPolarityAbs = activeNodes.reduce((sum, node) => sum + Math.abs(node.hedonicPolarity), 0) / Math.max(1, activeNodes.length);
   const mode = 'raw';
-  const defaultVisible = window.innerWidth <= 680 ? 700 : window.innerWidth <= 1120 ? 1100 : 1800;
-  const visibleCount = state.fullCorpus ? state.dataset.nodes.length : Math.min(defaultVisible, state.dataset.nodes.length);
   const targetDistance = clamp(0.34 + families.size * 0.018 + phases.size * 0.012 + avgPolarityAbs * 0.08, 0.34, 0.62);
   const tolerance = clamp(0.045 + Math.min(0.08, activeNodes.length / 1200) + avgIntensity * 0.035, 0.045, 0.13);
+  const maxDegree = clampInt(activeNodes.length ? 6 + Math.round(families.size / 3) : 5, 5, 9);
   return {
     mode,
-    visibleCount: activeNodes.length ? activeNodes.length : visibleCount,
+    visibleCount: activeNodes.length ? activeNodes.length : state.dataset.nodes.length,
     targetDistance,
     tolerance,
     maxDegree: Number.POSITIVE_INFINITY,
@@ -170,7 +121,7 @@ function deriveAutoParams() {
     minConfidence: 0,
     showUncertain: true,
     polarityFilter: $('#polarity-filter')?.value || 'all',
-    edgeDensity: activeNodes.length || state.fullCorpus ? 'json' : 'medium',
+    edgeDensity: 'json',
     disconnectedMode: activeNodes.length ? 'hidden' : ($('#disconnected-mode')?.value || 'visible'),
     respectRawRelations: true,
     sessionGraph: activeNodes.length > 0,
@@ -184,43 +135,21 @@ function renderLegend(summary) {
     .filter(Boolean);
   const families = countBy(activeNodes, (node) => node.family).slice(0, 3).map(([family]) => family).join(', ') || '--';
   $('#mode-caption').textContent = 'crystal JSON';
-  $('#top-mode').textContent = state.fullCorpus && !state.activeIds.size ? 'full field' : modeLabel(params.mode);
-  $('#top-scope').textContent = state.activeIds.size
-    ? `${state.activeIds.size.toLocaleString('en-US')} active · no extra neighbors`
-    : `${params.visibleCount.toLocaleString('en-US')} visible · ${state.dataset.nodes.length.toLocaleString('en-US')} loaded`;
+  $('#top-mode').textContent = modeLabel(params.mode);
+  $('#top-scope').textContent = state.activeIds.size ? `${state.activeIds.size} active · no extra neighbors` : `${state.dataset.nodes.length} crystals`;
   $('#legend-visible').textContent = state.activeIds.size ? `${summary.nodes} / ${state.dataset.nodes.length}` : `${params.visibleCount} / ${state.dataset.nodes.length}`;
   $('#legend-mode').textContent = modeLabel(params.mode);
   $('#legend-depth').textContent = params.maxDepth;
   $('#legend-confidence').textContent = params.minConfidence.toFixed(2);
-  $('#legend-degree').textContent = Number.isFinite(params.maxDegree) ? params.maxDegree : 'unlimited';
+  $('#legend-degree').textContent = params.maxDegree;
   $('#legend-polarity').textContent = polarityLabel(params.polarityFilter);
   $('#legend-families').textContent = families;
   $('#legend-relations').textContent = state.activeIds.size ? `${summary.edges} session relationships` : `${summary.edges} edges`;
   $('#mode-caption').textContent = state.activeIds.size ? 'activation' : 'crystal JSON';
-  const fluidButton = $('#corpus-fluid');
-  const fullButton = $('#corpus-full');
-  fluidButton?.classList.toggle('active', !state.fullCorpus);
-  fullButton?.classList.toggle('active', state.fullCorpus);
-  fluidButton?.setAttribute('aria-pressed', String(!state.fullCorpus));
-  fullButton?.setAttribute('aria-pressed', String(state.fullCorpus));
-  const viewNote = $('#corpus-view-note');
-  if (viewNote) {
-    viewNote.textContent = state.activeIds.size
-      ? `${summary.nodes.toLocaleString('en-US')} active olfemes in the session.`
-      : state.fullCorpus
-        ? `${summary.nodes.toLocaleString('en-US')} olfemes and ${summary.edges.toLocaleString('en-US')} visible relationships.`
-        : `${summary.nodes.toLocaleString('en-US')} visible olfemes for smooth rendering.`;
-  }
 }
 
 function centerSession() {
   if (!state.atlas || !state.activeIds.size) return;
-  if (state.atlas.externalRenderer) {
-    window.dispatchEvent(new CustomEvent('olfaria:three-command', {
-      detail: { type: 'focus', activeIds: [...state.activeIds.keys()] },
-    }));
-    return;
-  }
   if (state.atlas.focusActiveCluster?.()) return;
   const active = state.atlas.nodes.filter((node) => state.activeIds.has(node.id) && node.position);
   if (!active.length) return;
@@ -280,7 +209,6 @@ function renderSessionSummary() {
   if (!state.sessionText) {
     box.classList.add('empty');
     box.textContent = 'No active session.';
-    renderActivationFeed([], []);
     renderProcessComments();
     return;
   }
@@ -302,64 +230,7 @@ function renderSessionSummary() {
     ${relationshipSummaries.length ? '<br>' : ''}
     Primary sample: ${previewNodes.map((item) => escapeHtml(nodeDisplayId(item.node))).join(', ') || 'no olfemes detected'}
   `;
-  renderActivationFeed(activeNodes, sessionEdges);
   renderProcessComments();
-}
-
-function renderActivationFeed(activeNodes, sessionEdges) {
-  const feed = $('#activation-feed');
-  if (!feed) return;
-  if (!state.sessionText) {
-    feed.className = 'activation-feed idle';
-    feed.innerHTML = `
-      <article>
-        <span>Field at rest</span>
-        <strong>Morulas on standby</strong>
-        <small>Activate a description to observe crystallization.</small>
-      </article>
-    `;
-    return;
-  }
-  if (!activeNodes.length) {
-    feed.className = 'activation-feed idle';
-    feed.innerHTML = `
-      <article>
-        <span>No matches found</span>
-        <strong>The field remains at rest</strong>
-        <small>Try more specific corpus descriptors.</small>
-      </article>
-    `;
-    return;
-  }
-
-  const polarity = activeNodes.reduce((sum, item) => sum + (Number(item.node.hedonicPolarity) || 0), 0) / activeNodes.length;
-  const polarityLabel = polarity > 0.22 ? 'Bright and positive' : polarity < -0.22 ? 'Dark and contrasting' : 'Balanced and ambivalent';
-  const phaseCounts = countBy(activeNodes, (item) => item.node.phase).slice(0, 3);
-  const phases = phaseCounts.map(([phase, count]) => `${phase} ${count}`).join(' · ');
-  const relationClasses = countBy(sessionEdges, (edge) => edge.relationClass || 'neutral').slice(0, 2);
-  const relationTheme = relationClasses.map(([kind, count]) => `${kind} ${count}`).join(' · ');
-  const averageQuality = sessionEdges.length
-    ? sessionEdges.reduce((sum, edge) => sum + (Number(edge.quality) || 0), 0) / sessionEdges.length
-    : 0;
-
-  feed.className = 'activation-feed active';
-  feed.innerHTML = `
-    <article>
-      <span>Overall polarity</span>
-      <strong>${escapeHtml(polarityLabel)}</strong>
-      <small>Mean index ${polarity.toFixed(2)} across ${activeNodes.length} active olfemes.</small>
-    </article>
-    <article>
-      <span>Graph phases</span>
-      <strong>${escapeHtml(phases || 'No dominant phase')}</strong>
-      <small>Phases describe the temporal evolution of the accord.</small>
-    </article>
-    <article>
-      <span>Resonance</span>
-      <strong>${sessionEdges.length} connections</strong>
-      <small>${escapeHtml(relationTheme || 'no direct relationship')} · confidence ${averageQuality.toFixed(2)}</small>
-    </article>
-  `;
 }
 
 function renderProcessComments() {
@@ -475,13 +346,16 @@ function renderCrystalArtifactPanel(node, neighbors) {
       <b>${escapeHtml(node.label)}</b>
       <span>${escapeHtml(node.family)} · ${escapeHtml(node.phase)} · ${escapeHtml(node.code)}</span>
     </div>
+    <div class="crystal-artifact-frame">
+      <canvas id="crystal-artifact-canvas" width="680" height="420" aria-label="Copo de nieve 3D del cristal seleccionado"></canvas>
+    </div>
     <div class="artifact-metrics">
       ${artifactMetric('simetria', metrics.symmetry)}
       ${artifactMetric('densidad', metrics.branch_density)}
       ${artifactMetric('tension', metrics.semantic_tension)}
       ${artifactMetric('pureza', metrics.purity)}
     </div>
-    <p class="artifact-caption">Cristal volumetrico de seis ejes visible en el campo · ramas semanticas: ${snowflakeBranchCount(crystal)} · vecinos directos: ${neighbors.length}</p>
+    <p class="artifact-caption">Brazos dendriticos: 6 · ramas: ${snowflakeBranchCount(crystal)} · vecinos directos: ${neighbors.length}</p>
   `;
   startCrystalArtifact(node);
 }
@@ -535,22 +409,6 @@ function drawCrystalArtifact(canvas, node, time) {
   ctx.fillStyle = gradient;
   ctx.fillRect(0, 0, width, height);
 
-  for (let index = 0; index < 9; index += 1) {
-    const glintAngle = seededUnit(`${node.id}:glint-angle:${index}`) * Math.PI * 2 + time * 0.035;
-    const glintRadius = base * (0.3 + seededUnit(`${node.id}:glint-radius:${index}`) * 0.78);
-    const gx = cx + Math.cos(glintAngle) * glintRadius;
-    const gy = cy + Math.sin(glintAngle) * glintRadius * 0.8;
-    const size = 0.7 + seededUnit(`${node.id}:glint-size:${index}`) * 1.4;
-    ctx.beginPath();
-    ctx.moveTo(gx - size * 3, gy);
-    ctx.lineTo(gx + size * 3, gy);
-    ctx.moveTo(gx, gy - size * 3);
-    ctx.lineTo(gx, gy + size * 3);
-    ctx.strokeStyle = `rgba(248,251,250,${0.1 + Math.sin(time * 1.2 + index) * 0.04})`;
-    ctx.lineWidth = 0.55;
-    ctx.stroke();
-  }
-
   drawSnowflakeLayer(ctx, node, axes, axisNames, {
     cx,
     cy,
@@ -588,14 +446,25 @@ function drawCrystalArtifact(canvas, node, time) {
     symmetry,
   });
 
-  drawArtifactCore(ctx, node, cx, cy, base * 0.145, spin, 0.96 - tilt);
+  ctx.beginPath();
+  for (let i = 0; i < 6; i += 1) {
+    const angle = spin + Math.PI / 6 + i * Math.PI / 3;
+    const x = cx + Math.cos(angle) * base * 0.12;
+    const y = cy + Math.sin(angle) * base * 0.12 * (0.96 - tilt);
+    i ? ctx.lineTo(x, y) : ctx.moveTo(x, y);
+  }
+  ctx.closePath();
+  ctx.fillStyle = crystalColor(node.hedonicPolarity, 0.42);
+  ctx.strokeStyle = 'rgba(245,247,249,0.72)';
+  ctx.lineWidth = 1;
+  ctx.fill();
+  ctx.stroke();
 }
 
 function drawSnowflakeLayer(ctx, node, axes, axisNames, options) {
   const { cx, cy, radius, spin, scaleY, alpha, lineScale, density, tension, symmetry } = options;
   ctx.save();
   ctx.globalAlpha = alpha;
-  ctx.globalCompositeOperation = 'screen';
   ctx.translate(cx, cy);
   ctx.rotate(spin);
   ctx.scale(1, scaleY);
@@ -612,8 +481,7 @@ function drawSnowflakeLayer(ctx, node, axes, axisNames, options) {
       const wobble = 1 + seededSigned(`${node.id}:flake-ring:${i}:${ringIndex}`) * tension * 0.025;
       const x = Math.cos(angle) * radius * step * wobble;
       const y = Math.sin(angle) * radius * step * wobble;
-      if (i) ctx.lineTo(x, y);
-      else ctx.moveTo(x, y);
+      i ? ctx.lineTo(x, y) : ctx.moveTo(x, y);
     }
     ctx.closePath();
     ctx.strokeStyle = crystalColor(node.hedonicPolarity, 0.22);
@@ -627,7 +495,12 @@ function drawSnowArm2d(ctx, node, descriptors, angle, length, axisIndex, lineSca
   const branchCount = Math.max(3, Math.min(7, descriptors.length + 3 + Math.round(density * 2)));
   ctx.save();
   ctx.rotate(angle);
-  drawArtifactShard(ctx, 0, 0, length, 0, Math.max(2.1, length * 0.038) * lineScale, node.hedonicPolarity, 0.5, 0.78);
+  ctx.beginPath();
+  ctx.moveTo(0, 0);
+  ctx.lineTo(length, 0);
+  ctx.strokeStyle = crystalColor(node.hedonicPolarity, 0.72);
+  ctx.lineWidth = 1.45 * lineScale;
+  ctx.stroke();
   for (let i = 0; i < branchCount; i += 1) {
     const descriptor = descriptors[i % Math.max(1, descriptors.length)] || {};
     const t = (i + 1) / (branchCount + 1);
@@ -639,72 +512,26 @@ function drawSnowArm2d(ctx, node, descriptors, angle, length, axisIndex, lineSca
       const branchAngle = side * tilt;
       const bx = x + Math.cos(branchAngle) * branchLength;
       const by = Math.sin(branchAngle) * branchLength;
-      const polarity = descriptor.polarity ?? node.hedonicPolarity;
-      drawArtifactShard(ctx, x, 0, bx, by, Math.max(1.2, branchLength * 0.065) * lineScale, polarity, 0.38 + (descriptor.volatility || 0.4) * 0.18, 0.62);
+      ctx.beginPath();
+      ctx.moveTo(x, 0);
+      ctx.lineTo(bx, by);
+      ctx.strokeStyle = crystalColor(descriptor.polarity ?? node.hedonicPolarity, 0.42 + (descriptor.volatility || 0.4) * 0.26);
+      ctx.lineWidth = (0.72 + weight * 0.36) * lineScale;
+      if ((descriptor.polarity ?? 0) < -0.25) ctx.setLineDash([4, 4]);
+      ctx.stroke();
+      ctx.setLineDash([]);
       if (i < branchCount - 1) {
         const twig = branchLength * 0.36;
-        drawArtifactShard(ctx, bx, by, bx - Math.cos(branchAngle * 1.65) * twig, by + Math.sin(branchAngle * 1.65) * twig, Math.max(0.7, twig * 0.06) * lineScale, polarity, 0.2, 0.36);
+        ctx.beginPath();
+        ctx.moveTo(bx, by);
+        ctx.lineTo(bx - Math.cos(branchAngle * 1.65) * twig, by + Math.sin(branchAngle * 1.65) * twig);
+        ctx.strokeStyle = crystalColor(descriptor.polarity ?? node.hedonicPolarity, 0.24);
+        ctx.lineWidth = 0.5 * lineScale;
+        ctx.stroke();
       }
     });
   }
   ctx.restore();
-}
-
-function drawArtifactShard(ctx, x1, y1, x2, y2, width, polarity, fillAlpha, strokeAlpha) {
-  const dx = x2 - x1;
-  const dy = y2 - y1;
-  const length = Math.hypot(dx, dy) || 1;
-  const px = -dy / length * width;
-  const py = dx / length * width;
-  const shoulderX = x1 + dx * 0.84;
-  const shoulderY = y1 + dy * 0.84;
-  ctx.beginPath();
-  ctx.moveTo(x1 + px, y1 + py);
-  ctx.lineTo(shoulderX + px * 0.5, shoulderY + py * 0.5);
-  ctx.lineTo(x2, y2);
-  ctx.lineTo(shoulderX - px * 0.5, shoulderY - py * 0.5);
-  ctx.lineTo(x1 - px, y1 - py);
-  ctx.closePath();
-  ctx.fillStyle = crystalFacetColor(polarity, 'base', fillAlpha);
-  ctx.strokeStyle = crystalFacetColor(polarity, 'light', strokeAlpha);
-  ctx.lineWidth = Math.max(0.45, width * 0.18);
-  ctx.shadowColor = crystalColor(polarity, 0.24);
-  ctx.shadowBlur = Math.min(8, width * 1.5);
-  ctx.fill();
-  ctx.stroke();
-  ctx.shadowBlur = 0;
-  ctx.beginPath();
-  ctx.moveTo(x1, y1);
-  ctx.lineTo(x2, y2);
-  ctx.strokeStyle = 'rgba(255,255,255,0.42)';
-  ctx.lineWidth = Math.max(0.35, width * 0.12);
-  ctx.stroke();
-}
-
-function drawArtifactCore(ctx, node, cx, cy, radius, spin, scaleY) {
-  const points = Array.from({ length: 6 }, (_, index) => {
-    const angle = spin + Math.PI / 6 + index * Math.PI / 3;
-    return [cx + Math.cos(angle) * radius, cy + Math.sin(angle) * radius * scaleY];
-  });
-  points.forEach((point, index) => {
-    const next = points[(index + 1) % points.length];
-    ctx.beginPath();
-    ctx.moveTo(cx, cy);
-    ctx.lineTo(point[0], point[1]);
-    ctx.lineTo(next[0], next[1]);
-    ctx.closePath();
-    ctx.fillStyle = crystalFacetColor(node.hedonicPolarity, index % 3 === 0 ? 'light' : index % 2 ? 'shadow' : 'base', 0.78);
-    ctx.fill();
-  });
-  ctx.beginPath();
-  points.forEach((point, index) => index ? ctx.lineTo(point[0], point[1]) : ctx.moveTo(point[0], point[1]));
-  ctx.closePath();
-  ctx.strokeStyle = 'rgba(248,251,250,0.92)';
-  ctx.lineWidth = 1.1;
-  ctx.shadowColor = crystalColor(node.hedonicPolarity, 0.5);
-  ctx.shadowBlur = 10;
-  ctx.stroke();
-  ctx.shadowBlur = 0;
 }
 
 function artifactMetric(label, value) {
@@ -723,25 +550,9 @@ function snowflakeBranchCount(crystal) {
 }
 
 function crystalColor(polarity, alpha) {
-  if (polarity < -0.25) return `rgba(205,136,112,${alpha})`;
-  if (polarity > 0.25) return `rgba(155,216,198,${alpha})`;
-  return `rgba(220,227,224,${alpha})`;
-}
-
-function crystalFacetColor(polarity, tone, alpha) {
-  if (polarity < -0.25) {
-    if (tone === 'light') return `rgba(244,197,178,${alpha})`;
-    if (tone === 'shadow') return `rgba(116,61,50,${alpha})`;
-    return `rgba(205,136,112,${alpha})`;
-  }
-  if (polarity > 0.25) {
-    if (tone === 'light') return `rgba(224,248,240,${alpha})`;
-    if (tone === 'shadow') return `rgba(61,112,98,${alpha})`;
-    return `rgba(155,216,198,${alpha})`;
-  }
-  if (tone === 'light') return `rgba(248,251,250,${alpha})`;
-  if (tone === 'shadow') return `rgba(105,119,115,${alpha})`;
-  return `rgba(220,227,224,${alpha})`;
+  if (polarity < -0.25) return `rgba(255,111,145,${alpha})`;
+  if (polarity > 0.25) return `rgba(102,227,196,${alpha})`;
+  return `rgba(174,182,193,${alpha})`;
 }
 
 function seededUnit(value) {
@@ -788,7 +599,7 @@ function formatMetric(value) {
 }
 
 function exposeExternalApi() {
-  const api = {
+  window.OlfemasNeuralErdos = {
     setSessionText: (text) => setSessionText(text, 'window-api'),
     getSessionText: () => state.sessionText,
     getAtlasSnapshot: () => getSnapshot(),
@@ -796,52 +607,6 @@ function exposeExternalApi() {
     getJsonLd: () => buildJsonLd(),
     rebuild,
   };
-  window.OlfariaCrystalErdos = api;
-  window.OlfemasNeuralErdos = api;
-
-  window.OlfariaAtlasApi = Object.freeze({
-    isReady: () => Boolean(state.dataset && state.atlas),
-    focusNodes: (identifiers, options = {}) => {
-      const requested = Array.isArray(identifiers) ? identifiers : [];
-      const active = options.clearExisting === false
-        ? new Map(state.activeIds)
-        : new Map();
-      const selected = [];
-      const missing = [];
-
-      requested.forEach((identifier) => {
-        const key = String(identifier || '').trim().toLocaleLowerCase();
-        const node = state.dataset.nodes.find((candidate) => [
-          candidate.id, candidate.code, candidate.idKey,
-        ].some((value) => String(value || '').toLocaleLowerCase() === key));
-        if (!node) {
-          missing.push(identifier);
-          return;
-        }
-        active.set(node.id, 1);
-        selected.push(node);
-      });
-
-      if (selected.length) {
-        setSessionText(
-          selected.map((node) => node.idKey).join(', '),
-          'webmcp',
-          active,
-        );
-      }
-
-      return {
-        selected: selected.map((node) => ({
-          codigo: node.code,
-          id_key: node.idKey,
-        })),
-        missing,
-        selected_count: selected.length,
-        total_focused: state.activeIds.size,
-      };
-    },
-    getFocusedIdentifiers: () => [...state.activeIds.keys()],
-  });
 }
 
 function buildExtraction() {
@@ -855,9 +620,6 @@ function buildExtraction() {
       version: state.dataset.meta.version,
       totalNodes: state.dataset.nodes.length,
       totalRelations: state.dataset.relations.length,
-      requestedRelations: state.dataset.meta.corpusAudit?.requested_counts?.relations ?? null,
-      missingRelationRecords: state.dataset.meta.corpusAudit?.discrepancy?.missing_relation_records ?? null,
-      sourceSha256: state.dataset.meta.corpusAudit?.source_sha256 ?? null,
     },
     visibleNodes: state.atlas.nodes.map((node) => serializeNode(node, state.activeIds.get(node.id) || 0)),
     visibleRelations: state.atlas.edges.map(serializeEdge),
@@ -871,7 +633,7 @@ function buildExtraction() {
       node: 'Olfema perceptivo-linguistico normalizado.',
       crystal: 'Cristal radial de seis ejes generado para cada olfema.',
       edge: 'Distancia olfativa fertil, relacion semantica o puente compositivo; no igualdad.',
-      use: 'Datos preparados para exploracion local y exportacion JSON-LD trazable.',
+      use: 'Datos preparados para consumo por API externa y exportacion JSON-LD.',
     },
   };
 }
@@ -1164,6 +926,14 @@ function clamp(value, min, max) {
   return Math.max(min, Math.min(max, value));
 }
 
+function clampInt(value, min, max) {
+  return Math.round(clamp(value, min, max));
+}
+
+function camelToKebab(value) {
+  return value.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`);
+}
+
 function escapeHtml(value) {
   return String(value ?? '')
     .replace(/&/g, '&amp;')
@@ -1171,4 +941,8 @@ function escapeHtml(value) {
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#39;');
+}
+
+function escapeAttr(value) {
+  return escapeHtml(value).replace(/`/g, '&#96;');
 }

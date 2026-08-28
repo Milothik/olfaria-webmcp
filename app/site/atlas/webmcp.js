@@ -71,7 +71,7 @@
       },
       annotations: { readOnlyHint: true },
       execute: ({ query, limit = 8 }) => requestJson(
-        `/api/webmcp/search?q=${encodeURIComponent(query)}&limit=${limit}`
+        `./api/webmcp/search?q=${encodeURIComponent(query)}&limit=${limit}`
       ),
     },
     {
@@ -89,7 +89,7 @@
       },
       annotations: { readOnlyHint: true },
       execute: ({ olfema, depth = 1, limit = 30 }) => requestJson(
-        `/api/webmcp/relations?olfema=${encodeURIComponent(olfema)}&depth=${depth}&limit=${limit}`
+        `./api/webmcp/relations?olfema=${encodeURIComponent(olfema)}&depth=${depth}&limit=${limit}`
       ),
     },
     {
@@ -105,7 +105,7 @@
         additionalProperties: false,
       },
       annotations: { readOnlyHint: true },
-      execute: ({ first, second }) => postJson('/api/webmcp/compare', { first, second }),
+      execute: ({ first, second }) => postJson('./api/webmcp/compare', { first, second }),
     },
     {
       name: 'find_path',
@@ -122,7 +122,7 @@
       },
       annotations: { readOnlyHint: true },
       execute: ({ source, target, max_depth = 5 }) => postJson(
-        '/api/webmcp/path', { source, target, max_depth }
+        './api/webmcp/path', { source, target, max_depth }
       ),
     },
     {

@@ -1,11 +1,9 @@
 export async function loadDataset() {
-  const [raw, corpusAudit] = await Promise.all([
-    requestJson(new URL('../api/data', import.meta.url)),
-    requestJson(new URL('../data/corpus-manifest.json', import.meta.url)),
-  ]);
-  const dataset = normalizeDataset(raw);
-  dataset.meta.corpusAudit = corpusAudit;
-  return dataset;
+  const rootSegment = window.location.pathname.split('/').filter(Boolean)[0];
+  const url = rootSegment?.startsWith('olfaria')
+    ? `/${rootSegment}/api/data`
+    : '/api/data';
+  return normalizeDataset(await requestJson(url));
 }
 
 const CRYSTAL_AXES = ['matter', 'sensation', 'hedonic', 'phase', 'context', 'associations'];
@@ -48,6 +46,11 @@ function coerceNumber(value, fallback = 0) {
 
 function normalizeList(value) {
   return Array.isArray(value) ? value.filter((item) => item !== null && item !== undefined).map(String) : [];
+}
+
+function cloneJson(value) {
+  if (value === null || value === undefined) return value;
+  return JSON.parse(JSON.stringify(value));
 }
 
 function normalizeIntensity(raw) {
@@ -96,7 +99,7 @@ export function normalizeDataset(raw) {
       materials: normalizeList(item.ingredientes_materiales || item.related_ingredients_or_materials),
       riskFlags: normalizeList(item.risk_flags),
       role: inferRole(item),
-      raw: item,
+      raw: cloneJson(item),
       searchText: '',
     };
     node.volatility = phaseVolatility(node.phase);
@@ -129,13 +132,15 @@ export function normalizeDataset(raw) {
       polarity: rel.polarity ?? rel.polaridad,
       phase: rel.phase || rel.fase || '',
       rationale: rel.rationale || rel.racional_comentario || '',
-      raw: rel,
+      raw: cloneJson(rel),
     });
   }
 
   return {
     nodes,
     relations,
+    rawOlfemas: rawOlfemas.map(cloneJson),
+    rawRelations: rawRelations.map(cloneJson),
     meta: {
       dataset: raw?.dataset || raw?.schema || 'Olfaria',
       version: raw?.version || raw?.source_version || '',
